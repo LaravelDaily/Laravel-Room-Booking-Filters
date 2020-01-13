@@ -13,6 +13,9 @@ class DatabaseSeeder extends Seeder
             UsersTableSeeder::class,
             RoleUserTableSeeder::class,
             HotelsTableSeeder::class,
+            RoomTypesTableSeeder::class,
+            RoomsTableSeeder::class,
+            BookingsTableSeeder::class,
         ]);
     }
 }
