@@ -24,7 +24,7 @@ class BookingsApiController extends Controller
     {
         $booking = Booking::create($request->all());
 
-        return (new BookingResource($booking))
+        return (new BookingResource($booking->load(['room'])))
             ->response()
             ->setStatusCode(Response::HTTP_CREATED);
     }
@@ -51,6 +51,8 @@ class BookingsApiController extends Controller
 
         $booking->delete();
 
-        return response(null, Response::HTTP_NO_CONTENT);
+        return (new BookingResource($booking->load(['room'])))
+        ->response()
+        ->setStatusCode(Response::HTTP_OK);
     }
 }
