@@ -11,16 +11,47 @@ use App\Room;
 use Gate;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Yajra\DataTables\Facades\DataTables;
 
 class BookingsController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        abort_if(Gate::denies('booking_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+        if ($request->ajax()) {
+            $query = Booking::with(['room'])->select(sprintf('%s.*', (new Booking)->table));
+            $table = Datatables::of($query);
 
-        $bookings = Booking::all();
+            $table->addColumn('placeholder', '&nbsp;');
+            $table->addColumn('actions', '&nbsp;');
 
-        return view('admin.bookings.index', compact('bookings'));
+            $table->editColumn('actions', function ($row) {
+                $viewGate      = 'booking_show';
+                $editGate      = 'booking_edit';
+                $deleteGate    = 'booking_delete';
+                $crudRoutePart = 'bookings';
+
+                return view('partials.datatablesActions', compact(
+                    'viewGate',
+                    'editGate',
+                    'deleteGate',
+                    'crudRoutePart',
+                    'row'
+                ));
+            });
+
+            $table->editColumn('id', function ($row) {
+                return $row->id ? $row->id : "";
+            });
+            $table->addColumn('room_name', function ($row) {
+                return $row->room ? $row->room->name : '';
+            });
+
+            $table->rawColumns(['actions', 'placeholder', 'room']);
+
+            return $table->make(true);
+        }
+
+        return view('admin.bookings.index');
     }
 
     public function create()

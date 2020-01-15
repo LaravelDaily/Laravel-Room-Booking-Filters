@@ -12,16 +12,54 @@ use App\RoomType;
 use Gate;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Yajra\DataTables\Facades\DataTables;
 
 class RoomsController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        abort_if(Gate::denies('room_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+        if ($request->ajax()) {
+            $query = Room::with(['hotel', 'room_type'])->select(sprintf('%s.*', (new Room)->table));
+            $table = Datatables::of($query);
 
-        $rooms = Room::all();
+            $table->addColumn('placeholder', '&nbsp;');
+            $table->addColumn('actions', '&nbsp;');
 
-        return view('admin.rooms.index', compact('rooms'));
+            $table->editColumn('actions', function ($row) {
+                $viewGate      = 'room_show';
+                $editGate      = 'room_edit';
+                $deleteGate    = 'room_delete';
+                $crudRoutePart = 'rooms';
+
+                return view('partials.datatablesActions', compact(
+                    'viewGate',
+                    'editGate',
+                    'deleteGate',
+                    'crudRoutePart',
+                    'row'
+                ));
+            });
+
+            $table->editColumn('id', function ($row) {
+                return $row->id ? $row->id : "";
+            });
+            $table->editColumn('name', function ($row) {
+                return $row->name ? $row->name : "";
+            });
+            $table->addColumn('hotel_name', function ($row) {
+                return $row->hotel ? $row->hotel->name : '';
+            });
+
+            $table->addColumn('room_type_name', function ($row) {
+                return $row->room_type ? $row->room_type->name : '';
+            });
+
+            $table->rawColumns(['actions', 'placeholder', 'hotel', 'room_type']);
+
+            return $table->make(true);
+        }
+
+        return view('admin.rooms.index');
     }
 
     public function create()
